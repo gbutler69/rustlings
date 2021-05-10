@@ -4,7 +4,7 @@
 #[derive(Debug)]
 struct Person {
     name: String,
-    age: usize,
+    age: u8,
 }
 
 // We implement the Default trait to use it as a fallback
@@ -33,10 +33,22 @@ impl Default for Person {
 // If while parsing the age, something goes wrong, then return the default of Person
 // Otherwise, then return an instantiated Person object with the results
 
-// I AM NOT DONE
-
 impl From<&str> for Person {
     fn from(s: &str) -> Person {
+        let mut split_fields = s.split(',');
+        match split_fields.next() {
+            Some(name) if !name.is_empty() => match split_fields.next() {
+                Some(age) => match age.trim().parse::<u8>() {
+                    Ok(age) if age > 0 => Person {
+                        name: name.into(),
+                        age,
+                    },
+                    _ => Person::default(),
+                },
+                _ => Person::default(),
+            },
+            _ => Person::default(),
+        }
     }
 }
 

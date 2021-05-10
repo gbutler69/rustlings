@@ -11,8 +11,6 @@ struct Color {
     blue: u8,
 }
 
-// I AM NOT DONE
-
 // Your task is to complete this implementation
 // and return an Ok result of inner type Color.
 // You need to create an implementation for a tuple of three integers,
@@ -25,19 +23,54 @@ struct Color {
 // Tuple implementation
 impl TryFrom<(i16, i16, i16)> for Color {
     type Error = String;
-    fn try_from(tuple: (i16, i16, i16)) -> Result<Self, Self::Error> {}
+    fn try_from(tuple: (i16, i16, i16)) -> Result<Self, Self::Error> {
+        match tuple {
+            (0..=255, 0..=255, 0..=255) => Ok(Color {
+                red: tuple.0 as u8,
+                green: tuple.1 as u8,
+                blue: tuple.2 as u8,
+            }),
+            (red @ _, 0..=255, 0..=255) => Err(format!("Invalid Red({}) Value", red)),
+            (0..=255, green @ _, 0..=255) => Err(format!("Invalid Green({}) Value", green)),
+            (0..=255, 0..=255, blue @ _) => Err(format!("Invalid Blue({}) Value", blue)),
+            (red @ _, green @ _, 0..=255) => {
+                Err(format!("Invalid Red({}) & Green({}) Values", red, green))
+            }
+            (red @ _, 0..=255, blue @ _) => {
+                Err(format!("Invalid Red({}) & Blue({}) Values", red, blue))
+            }
+            (0..=255, green @ _, blue @ _) => {
+                Err(format!("Invalid Green({}) & Blue({}) Values", green, blue))
+            }
+            _ => Err(format!(
+                "Invalid RGB({:?}) Value - All components out-of-range",
+                tuple
+            )),
+        }
+    }
 }
 
 // Array implementation
 impl TryFrom<[i16; 3]> for Color {
     type Error = String;
-    fn try_from(arr: [i16; 3]) -> Result<Self, Self::Error> {}
+    fn try_from(arr: [i16; 3]) -> Result<Self, Self::Error> {
+        Self::try_from((arr[0], arr[1], arr[2]))
+    }
 }
 
 // Slice implementation
 impl TryFrom<&[i16]> for Color {
     type Error = String;
-    fn try_from(slice: &[i16]) -> Result<Self, Self::Error> {}
+    fn try_from(slice: &[i16]) -> Result<Self, Self::Error> {
+        match slice.len() {
+            3 => Self::try_from((slice[0], slice[1], slice[2])),
+            _ => Err(format!(
+                "Invalid number of components ({}) provided in {:?}",
+                slice.len(),
+                slice
+            )),
+        }
+    }
 }
 
 fn main() {
@@ -86,6 +119,28 @@ mod tests {
             })
         );
     }
+    #[test]
+    fn test_tuple_red_out_of_range() {
+        assert_eq!(
+            Color::try_from((-1, 10, 255)).unwrap_err(),
+            "Invalid Red(-1) Value"
+        );
+    }
+    #[test]
+    fn test_tuple_green_out_of_range() {
+        assert_eq!(
+            Color::try_from((1, -10, 255)).unwrap_err(),
+            "Invalid Green(-10) Value"
+        );
+    }
+    #[test]
+    fn test_tuple_blue_out_of_range() {
+        assert_eq!(
+            Color::try_from((1, 10, -255)).unwrap_err(),
+            "Invalid Blue(-255) Value"
+        );
+    }
+
     #[test]
     fn test_array_out_of_range_positive() {
         let c: Result<Color, String> = [1000, 10000, 256].try_into();
